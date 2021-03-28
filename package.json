@@ -4,7 +4,8 @@
   "description": "Scale Models and Parts while maintaining correct relationships with descendants",
   "main": "out/init.lua",
   "scripts": {
-    "prepublishOnly": "rbxtsc"
+    "watch": "rbxtsc -w",
+    "build": "rbxtsc"
   },
   "keywords": [],
   "author": "FirstVertex",
