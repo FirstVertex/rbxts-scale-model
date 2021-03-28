@@ -14,7 +14,7 @@
 
 ## Usage
 
-1. Install package
+1. Install [npm package](https://www.npmjs.com/package/@rbxts/scale-model)
 ```
 npm i @rbxts/scale-model
 ```
