@@ -11,6 +11,7 @@
   "scripts": {
     "watch": "rbxtsc -w",
     "build": "rbxtsc",
+    "patch": "npm version patch",
     "publish": "npm publish --access public"
   },
   "keywords": [
