@@ -29,7 +29,7 @@ scaleModel(myModel, 1.5);
 
 ### Did I miss your favorite Descendant?
 
-Pull Requests are welcome if there's something I missed.  Or, open an Issue.
+[Pull Requests](https://github.com/FirstVertex/rbxts-scale-model/pulls) are welcome if there's something I missed.  Or, [open an Issue](https://github.com/FirstVertex/rbxts-scale-model/issues).
 
 ### Roblox-TS
 
@@ -38,3 +38,5 @@ Part of the ever-growing [Roblox-TS](https://roblox-ts.com/) community.
 ### Roblox
 
 Friend me on Roblox, my Avatar is [FirstVertex](https://www.roblox.com/users/2031724732/profile).
+
+:v:
