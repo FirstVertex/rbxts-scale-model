@@ -46,7 +46,7 @@ function _scaleDescendants(descendants: Instance[], scale: number, origin: Vecto
 		} else if (descendant.IsA("Fire")) {
 			_scaleFire(descendant, scale, origin);
 		} else if (descendant.IsA("Explosion")) {
-			_scaleExplosion(descendant, scale);
+			_scaleExplosion(descendant, scale, origin);
 		} else if (descendant.IsA("ParticleEmitter")) {
 			_scaleParticle(descendant, scale);
 		}
@@ -58,22 +58,23 @@ function _scaleBasePart(part: BasePart, scale: number, origin: Vector3) {
 	part.Size = part.Size.mul(scale);
 }
 
-function _scaleAttachment(attachment: Attachment, scale: number, origin: Vector3) {
+function _scaleAttachment(attachment: Attachment, scale: number, _origin: Vector3) {
 	const parent = attachment.Parent;
 	if (parent && parent.IsA("BasePart")) {
 		attachment.WorldPosition = parent.Position.Lerp(attachment.WorldPosition, scale);
 	}
 }
 
-function _scaleMesh(mesh: SpecialMesh, scale: number, origin: Vector3) {
+function _scaleMesh(mesh: SpecialMesh, scale: number, _origin: Vector3) {
 	mesh.Scale = mesh.Scale.mul(scale);
 }
 
-function _scaleFire(fire: Fire, scale: number, origin: Vector3) {
+function _scaleFire(fire: Fire, scale: number, _origin: Vector3) {
 	fire.Size = math.floor(fire.Size * scale);
 }
 
-function _scaleExplosion(explosion: Explosion, scale: number) {
+function _scaleExplosion(explosion: Explosion, scale: number, origin: Vector3) {
+	explosion.Position = origin.Lerp(explosion.Position, scale);
 	explosion.BlastPressure *= scale;
 	explosion.BlastRadius *= scale;
 }
