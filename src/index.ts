@@ -33,35 +33,48 @@ export function scalePart(part: BasePart, scale: number, center?: Vector3) {
 	_scaleDescendants(part.GetDescendants(), scale, origin);
 }
 
-function _scaleDescendants(descendants: Instance[], scale: number, origin: Vector3) {
-	const parts: BasePart[] = <BasePart[]>descendants.filter((p) => p.IsA("BasePart"));
-	parts.forEach((part: BasePart) => {
-		part.Position = origin.Lerp(part.Position, scale);
-		part.Size = part.Size.mul(scale);
-	});
+function _scaleBasePart(part: BasePart, scale: number, origin: Vector3) {
+	part.Position = origin.Lerp(part.Position, scale);
+	part.Size = part.Size.mul(scale);
+}
 
-	const atts: Attachment[] = <Attachment[]>descendants.filter((p) => p.IsA("Attachment"));
-	atts.forEach((att: Attachment) => {
-		const parent = <BasePart>att.Parent;
-		att.WorldPosition = parent.Position.Lerp(att.WorldPosition, scale);
-	});
+function _scaleAttachment(attachment: Attachment, scale: number, origin: Vector3) {
+	const parent = attachment.Parent;
+	if (parent && parent.IsA("BasePart")) {
+		attachment.WorldPosition = parent.Position.Lerp(attachment.WorldPosition, scale);
+	}
+}
 
-	const specials: SpecialMesh[] = <SpecialMesh[]>descendants.filter((p) => p.IsA("SpecialMesh"));
-	specials.forEach((special: SpecialMesh) => {
-		special.Scale = special.Scale.mul(scale);
-	});
+function _scaleMesh(mesh: SpecialMesh, scale: number, origin: Vector3) {
+	mesh.Scale = mesh.Scale.mul(scale);
+}
 
-	const fires: Fire[] = <Fire[]>descendants.filter((p) => p.IsA("Fire"));
-	fires.forEach((fire: Fire) => {
-		fire.Size = math.floor(fire.Size * scale);
-	});
-
-	const particles: ParticleEmitter[] = <ParticleEmitter[]>descendants.filter((p) => p.IsA("ParticleEmitter"));
-	particles.forEach((particle: ParticleEmitter) => (particle.Size = _scaleNumberSequence(particle.Size, scale)));
+function _scaleFire(fire: Fire, scale: number, origin: Vector3) {
+	fire.Size = math.floor(fire.Size * scale);
 }
 
 function _scaleNumberSequence(sequence: NumberSequence, scale: number): NumberSequence {
 	return new NumberSequence(
 		sequence.Keypoints.map((kp) => new NumberSequenceKeypoint(kp.Time, kp.Value * scale, kp.Envelope * scale)),
 	);
+}
+
+function _scaleParticle(particle: ParticleEmitter, scale: number) {
+	particle.Size = _scaleNumberSequence(particle.Size, scale);
+}
+
+function _scaleDescendants(descendants: Instance[], scale: number, origin: Vector3) {
+	for (const descendant of descendants) {
+		if (descendant.IsA("BasePart")) {
+			_scaleBasePart(descendant, scale, origin);
+		} else if (descendant.IsA("Attachment")) {
+			_scaleAttachment(descendant, scale, origin);
+		} else if (descendant.IsA("SpecialMesh")) {
+			_scaleMesh(descendant, scale, origin);
+		} else if (descendant.IsA("Fire")) {
+			_scaleFire(descendant, scale, origin);
+		} else if (descendant.IsA("ParticleEmitter")) {
+			_scaleParticle(descendant, scale);
+		}
+	}
 }
