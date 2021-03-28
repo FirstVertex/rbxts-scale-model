@@ -1,7 +1,7 @@
 {
   "name": "@rbxts/scale-model",
   "version": "1.0.7",
-  "description": "Scale Models and Parts while maintaining correct relationships with descendants",
+  "description": "Scale and Resize Models and Parts while maintaining correct relationships with descendants",
   "homepage": "https://github.com/FirstVertex/rbxts-scale-model",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
     "build": "rbxtsc",
     "publish": "npm publish --access public"
   },
-  "keywords": [],
+  "keywords": ["roblox", "model", "scale", "resize", "part", "roblox-ts", "typescript"],
   "author": "FirstVertex",
   "license": "ISC",
   "types": "out/index.d.ts",

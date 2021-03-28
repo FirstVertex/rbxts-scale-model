@@ -1,8 +1,8 @@
 # @rbxts/scale-model
 
-## Uniformly scale Models and Parts and all Descendants
+## Uniformly scale/resize Models and Parts and all Descendants
 
-### Currently Scaling the following types:
+### Currently scaling the following types:
 
 * Model
 * BasePart
@@ -14,7 +14,7 @@
 ## Usage
 
 1. Install package
-```bash
+```
 npm i @rbxts/scale-model
 ```
 
@@ -24,9 +24,9 @@ import { scaleModel, scalePart } from '@rbxts/scale-model';
 ```
 3. Pass a Model or Part, with a scale factor.  Scale factor > 1 is bigger, < 1 is smaller
 ```typescript
-scaleModel(myModel, 1.5);
+scaleModel(myModel, 1.5);   // All descendants of myModel to 150% size
 
-scalePart(myPart, 0.5);
+scalePart(myPart, 0.5);     // myPart and all descendants to 50% size
 ```
 
 ### Did I miss your favorite Descendant?
