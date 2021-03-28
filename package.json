@@ -1,6 +1,6 @@
 {
   "name": "@rbxts/scale-model",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Scale Models and Parts while maintaining correct relationships with descendants",
   "homepage": "https://github.com/FirstVertex/rbxts-scale-model",
   "repository": {
@@ -10,7 +10,8 @@
   "main": "out/init.lua",
   "scripts": {
     "watch": "rbxtsc -w",
-    "build": "rbxtsc"
+    "build": "rbxtsc",
+    "publish": "npm publish --access public"
   },
   "keywords": [],
   "author": "FirstVertex",
