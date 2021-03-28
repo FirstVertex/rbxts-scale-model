@@ -25,6 +25,8 @@ import { scaleModel, scalePart } from '@rbxts/scale-model';
 3. Pass a Model or Part, with a scale factor.  Scale factor > 1 is bigger, < 1 is smaller
 ```typescript
 scaleModel(myModel, 1.5);
+
+scalePart(myPart, 0.5);
 ```
 
 ### Did I miss your favorite Descendant?
