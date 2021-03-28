@@ -57,10 +57,10 @@ function _scaleDescendants(descendants: Instance[], scale: number, origin: Vecto
 	});
 
 	const particles: ParticleEmitter[] = <ParticleEmitter[]>descendants.filter((p) => p.IsA("ParticleEmitter"));
-	particles.forEach((particle: ParticleEmitter) => (particle.Size = _scaleNumberSequnce(particle.Size, scale)));
+	particles.forEach((particle: ParticleEmitter) => (particle.Size = _scaleNumberSequence(particle.Size, scale)));
 }
 
-function _scaleNumberSequnce(sequence: NumberSequence, scale: number): NumberSequence {
+function _scaleNumberSequence(sequence: NumberSequence, scale: number): NumberSequence {
 	return new NumberSequence(
 		sequence.Keypoints.map((kp) => new NumberSequenceKeypoint(kp.Time, kp.Value * scale, kp.Envelope * scale)),
 	);
