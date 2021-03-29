@@ -35,6 +35,20 @@ export function scalePart(part: BasePart, scale: number, center?: Vector3) {
 	_scaleDescendants(part.GetDescendants(), scale, origin);
 }
 
+/**
+ * Scale an Explosion uniformly
+ * @param explosion The Explosion to scale
+ * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
+ */
+export function scaleExplosion(explosion: Explosion, scale: number) {
+	if (scale === 1) {
+		return;
+	}
+	explosion.Position = explosion.Position.mul(scale);
+	explosion.BlastPressure *= scale;
+	explosion.BlastRadius *= scale;
+}
+
 function _scaleDescendants(descendants: Instance[], scale: number, origin: Vector3) {
 	for (const descendant of descendants) {
 		if (descendant.IsA("BasePart")) {
@@ -46,7 +60,7 @@ function _scaleDescendants(descendants: Instance[], scale: number, origin: Vecto
 		} else if (descendant.IsA("Fire")) {
 			_scaleFire(descendant, scale, origin);
 		} else if (descendant.IsA("Explosion")) {
-			_scaleExplosion(descendant, scale, origin);
+			scaleExplosion(descendant, scale);
 		} else if (descendant.IsA("ParticleEmitter")) {
 			_scaleParticle(descendant, scale);
 		}
@@ -71,12 +85,6 @@ function _scaleMesh(mesh: SpecialMesh, scale: number, _origin: Vector3) {
 
 function _scaleFire(fire: Fire, scale: number, _origin: Vector3) {
 	fire.Size = math.floor(fire.Size * scale);
-}
-
-function _scaleExplosion(explosion: Explosion, scale: number, origin: Vector3) {
-	explosion.Position = origin.Lerp(explosion.Position, scale);
-	explosion.BlastPressure *= scale;
-	explosion.BlastRadius *= scale;
 }
 
 function _scaleParticle(particle: ParticleEmitter, scale: number) {
