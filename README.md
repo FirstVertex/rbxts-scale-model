@@ -11,6 +11,7 @@
 * Fire (Size)
 * ParticleEmitter (Size: _NumberSequence_)
 * Explosion (Position, BlastPressure, BlastRadius)
+* Vector3 (Scale, Scale about Point)
 
 ## Usage
 

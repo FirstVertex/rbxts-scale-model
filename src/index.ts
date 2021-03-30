@@ -51,6 +51,20 @@ export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum
 }
 
 /**
+ * Scale a Vector uniformly
+ * @param vector The Vector to scale
+ * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
+ * @param center (Optional) The point about which to scale.  Default: position not considered
+ */
+export function scaleVector(vector: Vector3, scale: number, center?: Vector3) {
+	if (center) {
+		return center.Lerp(vector, scale);
+	} else {
+		return vector.mul(scale);
+	}
+}
+
+/**
  * Scale an Explosion uniformly
  * @param explosion The Explosion to scale
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
