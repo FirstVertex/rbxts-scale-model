@@ -12,7 +12,8 @@
     "watch": "rbxtsc -w",
     "build": "rbxtsc",
     "patch": "npm version patch",
-    "publish": "npm publish --access public"
+    "publish": "npm publish",
+    "test": "npm pack"
   },
   "keywords": [
     "roblox",

@@ -4,17 +4,23 @@
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: the Model's PrimaryPart's Position
  */
-export function scaleModel(model: Model, scale: number, center?: Vector3) {
-	if (scale === 1) {
-		return;
-	}
-	let origin = center;
-	if (!origin) {
+export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.NormalId) {
+	let origin: Vector3;
+	if (typeIs(center, "Vector3")) {
+		origin = center;
+	} else {
 		const pPart = model.PrimaryPart;
-		origin = pPart?.Position;
-		if (!pPart || !origin) {
-			print("Unable to scale model, no PrimaryPart has been defined, nor center provided");
+		if (!pPart) {
+			print("Unable to scale model, no PrimaryPart has been defined");
 			return;
+		}
+		if (center) {
+			origin = _minSide(model.GetExtentsSize(), pPart.Position, center);
+		} else {
+			if (scale === 1) {
+				return;
+			}
+			origin = pPart.Position;
 		}
 	}
 	_scaleDescendants(model.GetDescendants(), scale, origin);
@@ -26,11 +32,20 @@ export function scaleModel(model: Model, scale: number, center?: Vector3) {
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: the Part's Position
  */
-export function scalePart(part: BasePart, scale: number, center?: Vector3) {
-	if (scale === 1) {
-		return;
+export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum.NormalId) {
+	let origin: Vector3;
+	if (typeIs(center, "Vector3")) {
+		origin = center;
+	} else {
+		if (center) {
+			origin = _minSide(part.Size, part.Position, center);
+		} else {
+			if (scale === 1) {
+				return;
+			}
+			origin = part.Position;
+		}
 	}
-	const origin = center || part.Position;
 	_scaleBasePart(part, scale, origin);
 	_scaleDescendants(part.GetDescendants(), scale, origin);
 }
@@ -47,6 +62,31 @@ export function scaleExplosion(explosion: Explosion, scale: number) {
 	explosion.Position = explosion.Position.mul(scale);
 	explosion.BlastPressure *= scale;
 	explosion.BlastRadius *= scale;
+}
+
+function _minSide(size: Vector3, position: Vector3, side?: Enum.NormalId): Vector3 {
+	const halfSize = size.mul(0.5);
+	switch (side) {
+		case Enum.NormalId.Front: {
+			return new Vector3(position.X, position.Y, position.Z - halfSize.Z);
+		}
+		case Enum.NormalId.Back: {
+			return new Vector3(position.X, position.Y, position.Z + halfSize.Z);
+		}
+		case Enum.NormalId.Right: {
+			return new Vector3(position.X + halfSize.X, position.Y, position.Z);
+		}
+		case Enum.NormalId.Left: {
+			return new Vector3(position.X - halfSize.X, position.Y, position.Z);
+		}
+		case Enum.NormalId.Top: {
+			return new Vector3(position.X, position.Y + halfSize.Y, position.Z);
+		}
+		case Enum.NormalId.Bottom: {
+			return new Vector3(position.X, position.Y - halfSize.Y, position.Z);
+		}
+	}
+	return position;
 }
 
 function _scaleDescendants(descendants: Instance[], scale: number, origin: Vector3) {
