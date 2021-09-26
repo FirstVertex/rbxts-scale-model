@@ -1,6 +1,6 @@
 {
   "name": "@rbxts/scale-model",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Scale and Resize Models and Parts while maintaining correct relationships with descendants",
   "homepage": "https://github.com/FirstVertex/rbxts-scale-model",
   "repository": {
