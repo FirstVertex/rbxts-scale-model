@@ -5,25 +5,21 @@
  * @param center (Optional) The point about which to scale.  Default: the Model's PrimaryPart's Position
  */
 export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.NormalId) {
+	if (scale === 1) {
+		return;
+	}
 	let origin: Vector3;
-	if (typeIs(center, "Vector3")) {
+	if (center && typeIs(center, 'Vector3')) {
 		origin = center;
 	} else {
 		const pPart = model.PrimaryPart;
 		if (!pPart) {
-			print("Unable to scale model, no PrimaryPart has been defined");
+			print("Unable to scale model, no center nor PrimaryPart has been defined");
 			return;
 		}
-		if (center) {
-			origin = _minSide(model.GetExtentsSize(), pPart.Position, center);
-		} else {
-			if (scale === 1) {
-				return;
-			}
-			origin = pPart.Position;
-		}
+		origin = _centerToOrigin(center, model.GetExtentsSize(), pPart.Position);
 	}
-	_scaleDescendants(model.GetDescendants(), scale, origin);
+	scaleInstances(model.GetDescendants(), scale, origin);
 }
 
 /**
@@ -33,21 +29,12 @@ export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.
  * @param center (Optional) The point about which to scale.  Default: the Part's Position
  */
 export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum.NormalId) {
-	let origin: Vector3;
-	if (typeIs(center, "Vector3")) {
-		origin = center;
-	} else {
-		if (center) {
-			origin = _minSide(part.Size, part.Position, center);
-		} else {
-			if (scale === 1) {
-				return;
-			}
-			origin = part.Position;
-		}
+	if (scale === 1) {
+		return;
 	}
+	const origin = _centerToOrigin(center, part.Size, part.Position);
 	_scaleBasePart(part, scale, origin);
-	_scaleDescendants(part.GetDescendants(), scale, origin);
+	scaleInstances(part.GetDescendants(), scale, origin);
 }
 
 /**
@@ -57,6 +44,9 @@ export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum
  * @param center (Optional) The point about which to scale.  Default: position not considered
  */
 export function scaleVector(vector: Vector3, scale: number, center?: Vector3) {
+	if (scale === 1) {
+		return;
+	}
 	if (center) {
 		return center.Lerp(vector, scale);
 	} else {
@@ -76,6 +66,72 @@ export function scaleExplosion(explosion: Explosion, scale: number) {
 	explosion.Position = explosion.Position.mul(scale);
 	explosion.BlastPressure *= scale;
 	explosion.BlastRadius *= scale;
+}
+
+/**
+ * Scale a Tool uniformly
+ * @param tool The Tool to scale
+ * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
+ * @param center (Optional) The point about which to scale.  Default: the Tool's Handle's Position
+ */
+export function scaleTool(tool: Tool, scale: number, center?: Vector3 | Enum.NormalId) {
+	if (scale === 1) {
+		return;
+	}	
+	let origin: Vector3;
+	if (center && typeIs(center, 'Vector3')) {
+		origin = center;
+	} else {
+		const handle = tool.FindFirstChild('Handle') as BasePart;
+		if (!handle) {
+			print("Unable to scale tool, no center nor Handle has been defined");
+			return;
+		}
+		origin = _centerToOrigin(center, handle.Size, handle.Position);
+	}
+	scaleInstances(tool.GetDescendants(), scale, origin);
+}
+
+/**
+ * Scale an array of Instances uniformly
+ * @param explosion The Instances to scale
+ * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
+ */
+export function scaleInstances(instances: Instance[], scale: number, origin: Vector3) {
+	if (scale === 1) {
+		return;
+	}
+	for (const instance of instances) {
+		if (instance.IsA("BasePart")) {
+			_scaleBasePart(instance, scale, origin);
+		} else if (instance.IsA("Model")) {
+			scaleModel(instance, scale, origin);
+		} else if (instance.IsA("Attachment")) {
+			_scaleAttachment(instance, scale, origin);
+		} else if (instance.IsA("SpecialMesh")) {
+			_scaleMesh(instance, scale, origin);
+		} else if (instance.IsA("Fire")) {
+			_scaleFire(instance, scale, origin);
+		} else if (instance.IsA("Explosion")) {
+			scaleExplosion(instance, scale);
+		} else if (instance.IsA("ParticleEmitter")) {
+			_scaleParticle(instance, scale);
+		}
+	}
+}
+
+function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, position: Vector3): Vector3 {
+	let origin: Vector3;
+	if (typeIs(center, "Vector3")) {
+		origin = center;
+	} else {
+		if (center) {
+			origin = _minSide(size, position, center);
+		} else {
+			origin = position;
+		}
+	}
+	return origin;
 }
 
 function _minSide(size: Vector3, position: Vector3, side?: Enum.NormalId): Vector3 {
@@ -103,26 +159,10 @@ function _minSide(size: Vector3, position: Vector3, side?: Enum.NormalId): Vecto
 	return position;
 }
 
-function _scaleDescendants(descendants: Instance[], scale: number, origin: Vector3) {
-	for (const descendant of descendants) {
-		if (descendant.IsA("BasePart")) {
-			_scaleBasePart(descendant, scale, origin);
-		} else if (descendant.IsA("Attachment")) {
-			_scaleAttachment(descendant, scale, origin);
-		} else if (descendant.IsA("SpecialMesh")) {
-			_scaleMesh(descendant, scale, origin);
-		} else if (descendant.IsA("Fire")) {
-			_scaleFire(descendant, scale, origin);
-		} else if (descendant.IsA("Explosion")) {
-			scaleExplosion(descendant, scale);
-		} else if (descendant.IsA("ParticleEmitter")) {
-			_scaleParticle(descendant, scale);
-		}
-	}
-}
-
 function _scaleBasePart(part: BasePart, scale: number, origin: Vector3) {
-	part.Position = origin.Lerp(part.Position, scale);
+	const angle = part.CFrame.sub(part.Position);
+	const pos = origin.Lerp(part.Position, scale);
+	part.CFrame = new CFrame(pos).mul(angle);
 	part.Size = part.Size.mul(scale);
 }
 
