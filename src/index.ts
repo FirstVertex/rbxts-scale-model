@@ -4,7 +4,7 @@
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: the Model's PrimaryPart's Position
  */
-export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.NormalId) {
+export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.NormalId): void {
 	if (scale === 1) {
 		return;
 	}
@@ -28,7 +28,7 @@ export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: the Part's Position
  */
-export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum.NormalId) {
+export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum.NormalId): void {
 	if (scale === 1) {
 		return;
 	}
@@ -43,9 +43,9 @@ export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: position not considered
  */
-export function scaleVector(vector: Vector3, scale: number, center?: Vector3) {
+export function scaleVector(vector: Vector3, scale: number, center?: Vector3): Vector3 {
 	if (scale === 1) {
-		return;
+		return vector;
 	}
 	if (center) {
 		return center.Lerp(vector, scale);
@@ -59,7 +59,7 @@ export function scaleVector(vector: Vector3, scale: number, center?: Vector3) {
  * @param explosion The Explosion to scale
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  */
-export function scaleExplosion(explosion: Explosion, scale: number) {
+export function scaleExplosion(explosion: Explosion, scale: number): void {
 	if (scale === 1) {
 		return;
 	}
@@ -74,7 +74,7 @@ export function scaleExplosion(explosion: Explosion, scale: number) {
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: the Tool's Handle's Position
  */
-export function scaleTool(tool: Tool, scale: number, center?: Vector3 | Enum.NormalId) {
+export function scaleTool(tool: Tool, scale: number, center?: Vector3 | Enum.NormalId): void {
 	if (scale === 1) {
 		return;
 	}	
@@ -97,7 +97,7 @@ export function scaleTool(tool: Tool, scale: number, center?: Vector3 | Enum.Nor
  * @param explosion The Instances to scale
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  */
-export function scaleInstances(instances: Instance[], scale: number, origin: Vector3) {
+export function scaleInstances(instances: Instance[], scale: number, origin: Vector3): void {
 	if (scale === 1) {
 		return;
 	}
@@ -173,15 +173,15 @@ function _scaleAttachment(attachment: Attachment, scale: number, _origin: Vector
 	}
 }
 
-function _scaleMesh(mesh: SpecialMesh, scale: number, _origin: Vector3) {
+function _scaleMesh(mesh: SpecialMesh, scale: number, _origin: Vector3): void {
 	mesh.Scale = mesh.Scale.mul(scale);
 }
 
-function _scaleFire(fire: Fire, scale: number, _origin: Vector3) {
+function _scaleFire(fire: Fire, scale: number, _origin: Vector3): void {
 	fire.Size = math.floor(fire.Size * scale);
 }
 
-function _scaleParticle(particle: ParticleEmitter, scale: number) {
+function _scaleParticle(particle: ParticleEmitter, scale: number): void {
 	particle.Size = _scaleNumberSequence(particle.Size, scale);
 }
 
