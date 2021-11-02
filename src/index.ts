@@ -101,6 +101,13 @@ export function scaleInstances(instances: Instance[], scale: number, origin: Vec
 	if (scale === 1) {
 		return;
 	}
+	const welds = new Map<WeldConstraint, [boolean, boolean, boolean]>();
+	for (const instance of instances) {
+		if (instance.IsA("WeldConstraint")) {
+			welds.set(instance, [instance.Enabled, instance.Part0?.Anchored || false, instance.Part1?.Anchored || false]);
+			instance.Enabled = false;
+		}
+	}
 	for (const instance of instances) {
 		if (instance.IsA("BasePart")) {
 			_scaleBasePart(instance, scale, origin);
@@ -118,6 +125,15 @@ export function scaleInstances(instances: Instance[], scale: number, origin: Vec
 			_scaleParticle(instance, scale);
 		}
 	}
+	welds.forEach((value: [boolean, boolean, boolean], wc: WeldConstraint) => {
+		wc.Enabled = value[0];
+		if (wc.Part0) {
+			wc.Part0.Anchored = value[1];
+		}
+		if (wc.Part1) {
+			wc.Part1.Anchored = value[2];
+		}
+	});
 }
 
 function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, position: Vector3): Vector3 {
@@ -162,8 +178,9 @@ function _minSide(size: Vector3, position: Vector3, side?: Enum.NormalId): Vecto
 function _scaleBasePart(part: BasePart, scale: number, origin: Vector3) {
 	const angle = part.CFrame.sub(part.Position);
 	const pos = origin.Lerp(part.Position, scale);
-	part.CFrame = new CFrame(pos).mul(angle);
+	print('size 1st')
 	part.Size = part.Size.mul(scale);
+	part.CFrame = new CFrame(pos).mul(angle);
 }
 
 function _scaleAttachment(attachment: Attachment, scale: number, _origin: Vector3) {
