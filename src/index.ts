@@ -178,7 +178,6 @@ function _minSide(size: Vector3, position: Vector3, side?: Enum.NormalId): Vecto
 function _scaleBasePart(part: BasePart, scale: number, origin: Vector3) {
 	const angle = part.CFrame.sub(part.Position);
 	const pos = origin.Lerp(part.Position, scale);
-	print('size 1st')
 	part.Size = part.Size.mul(scale);
 	part.CFrame = new CFrame(pos).mul(angle);
 }
