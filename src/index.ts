@@ -19,7 +19,7 @@ export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.
 		}
 		origin = _centerToOrigin(center, model.GetExtentsSize(), pPart.Position);
 	}
-	scaleInstances(model.GetDescendants(), scale, origin);
+	scaleInstances(model.GetChildren(), scale, origin);
 }
 
 /**
@@ -34,7 +34,7 @@ export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum
 	}
 	const origin = _centerToOrigin(center, part.Size, part.Position);
 	_scaleBasePart(part, scale, origin);
-	scaleInstances(part.GetDescendants(), scale, origin);
+	scaleInstances(part.GetChildren(), scale, origin);
 }
 
 /**
@@ -89,7 +89,7 @@ export function scaleTool(tool: Tool, scale: number, center?: Vector3 | Enum.Nor
 		}
 		origin = _centerToOrigin(center, handle.Size, handle.Position);
 	}
-	scaleInstances(tool.GetDescendants(), scale, origin);
+	scaleInstances(tool.GetChildren(), scale, origin);
 }
 
 /**
@@ -109,12 +109,17 @@ export function scaleInstances(instances: Instance[], scale: number, origin: Vec
 		}
 	}
 	for (const instance of instances) {
+		let scaledChildren = false;
 		if (instance.IsA("BasePart")) {
 			_scaleBasePart(instance, scale, origin);
 		} else if (instance.IsA("Model")) {
 			scaleModel(instance, scale, origin);
+			scaledChildren = true;
 		} else if (instance.IsA("Attachment")) {
 			_scaleAttachment(instance, scale, origin);
+		} else if (instance.IsA("Tool")) {
+			scaleTool(instance, scale, origin);
+			scaledChildren = true;
 		} else if (instance.IsA("SpecialMesh")) {
 			_scaleMesh(instance, scale, origin);
 		} else if (instance.IsA("Fire")) {
@@ -125,6 +130,9 @@ export function scaleInstances(instances: Instance[], scale: number, origin: Vec
 			_scaleParticle(instance, scale);
 		} else if (instance.IsA("Texture")) {
 			scaleTexture(instance, scale, origin);
+		}
+		if (!scaledChildren) {
+			scaleInstances(instance.GetChildren(), scale, origin);
 		}
 	}
 	welds.forEach((value: [boolean, boolean, boolean], wc: WeldConstraint) => {
