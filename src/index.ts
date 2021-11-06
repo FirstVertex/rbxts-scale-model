@@ -123,6 +123,8 @@ export function scaleInstances(instances: Instance[], scale: number, origin: Vec
 			scaleExplosion(instance, scale);
 		} else if (instance.IsA("ParticleEmitter")) {
 			_scaleParticle(instance, scale);
+		} else if (instance.IsA("Texture")) {
+			scaleTexture(instance, scale, origin);
 		}
 	}
 	welds.forEach((value: [boolean, boolean, boolean], wc: WeldConstraint) => {
@@ -134,6 +136,13 @@ export function scaleInstances(instances: Instance[], scale: number, origin: Vec
 			wc.Part1.Anchored = value[2];
 		}
 	});
+}
+
+export function scaleTexture(texture: Texture, scale: number, origin: Vector3) {
+	texture.OffsetStudsU *= scale;	
+	texture.OffsetStudsV *= scale;
+	texture.StudsPerTileU *= scale;
+	texture.StudsPerTileV *= scale;
 }
 
 function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, position: Vector3): Vector3 {

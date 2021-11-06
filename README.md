@@ -9,6 +9,7 @@
 * Attachment (Position) (and thus connected Constraints, e.g. Welds and Joints)
 * SpecialMesh (Scale)
 * Fire (Size)
+* Texture (U/V)
 * ParticleEmitter (Size: _NumberSequence_)
 * Explosion (Position, BlastPressure, BlastRadius)
 * Vector3 (Scale, Scale about Point)
