@@ -2,6 +2,8 @@
 
 ## Uniformly scale/resize Models and Parts and all Descendants
 
+## Version 2.0 adds non-uniform scaling by number, Vector2, or Vector3
+
 ### Currently scaling the following types and properties:
 
 * Model (Size, Position)
@@ -31,7 +33,7 @@ import { scaleModel, scalePart, scaleExplosion, scaleTool, scaleInstances } from
 ```typescript
 scaleModel(myModel, 1.5);   // All descendants of myModel to 150% size
 
-scalePart(myPart, 0.5);     // myPart and all descendants to 50% size
+scalePart(myPart, new Vector3(0.5, 2, 0.5);     // myPart and all descendants to 50% size on XZ and 200% size on Y (tall + skinny)
 
 scaleExplosion(myExplosion, 10);     // myExplosion to 1000% size
 

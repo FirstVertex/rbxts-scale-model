@@ -1,10 +1,66 @@
+function averageNumbers(numbers: number[]) {
+	const count = numbers.size();
+	if (count === 0) {
+		return 0;
+	}
+	return numbers.reduce((acc: number, cv: number) => (acc + cv), 0) / count;
+}
+
+export type ScaleInputType = number | Vector2 | Vector3 | ScaleSpecifier
+
+export class ScaleSpecifier {
+	constructor(private readonly _scaleInput: ScaleInputType) {
+		const inputType = typeOf(_scaleInput);
+		this.isNumber = inputType === 'number';
+		this.isVector2 = inputType === 'Vector2';
+		this.isVector3 = inputType === 'Vector3';
+		this.isScaleSpec = !(this.isNumber || this.isVector2 || this.isVector3);
+
+		if (this.isNumber) {
+			const scaleNumber = this._scaleInput as number;
+			this.asNumber = scaleNumber;
+			this.asVector2 = new Vector2(scaleNumber, scaleNumber);
+			this.asVector3 = new Vector3(scaleNumber, scaleNumber, scaleNumber);
+			this.asScaleSpec = this;
+		} else if (this.isVector2) {
+			const scaleVec2 = this._scaleInput as Vector2;
+			this.asNumber = averageNumbers([scaleVec2.X, scaleVec2.Y]);
+			this.asVector2 = scaleVec2;
+			this.asVector3 = new Vector3(scaleVec2.X, scaleVec2.Y, this.asNumber);
+			this.asScaleSpec = this;
+		} else if (this.isVector3) {
+			const scaleVec3 = this._scaleInput as Vector3;
+			this.asNumber = averageNumbers([scaleVec3.X, scaleVec3.Y, scaleVec3.Z]);
+			this.asVector2 = new Vector2(scaleVec3.X, scaleVec3.Y);
+			this.asVector3 = scaleVec3;
+			this.asScaleSpec = this;
+		} else if (this.isScaleSpec) {
+			const scaleSpec = this._scaleInput as ScaleSpecifier;
+			this.asNumber = scaleSpec.asNumber;
+			this.asVector2 = scaleSpec.asVector2;
+			this.asVector3 = scaleSpec.asVector3;
+			this.asScaleSpec = scaleSpec;
+		}
+	}
+
+	readonly isNumber: boolean;
+	readonly isVector2: boolean;
+	readonly isVector3: boolean;
+	readonly isScaleSpec: boolean;
+
+	readonly asNumber!: number;
+	readonly asVector2!: Vector2;
+	readonly asVector3!: Vector3;
+	readonly asScaleSpec!: ScaleSpecifier;
+}
+
 /**
  * Scale a Model and all descendants uniformly
  * @param model The Model to scale
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: the Model's PrimaryPart's Position
  */
-export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.NormalId): void {
+export function scaleModel(model: Model, scale: ScaleInputType, center?: Vector3 | Enum.NormalId): void {
 	if (scale === 1) {
 		return;
 	}
@@ -19,7 +75,7 @@ export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.
 		}
 		origin = _centerToOrigin(center, model.GetExtentsSize(), pPart.Position);
 	}
-	scaleInstances(model.GetChildren(), scale, origin);
+	scaleDescendants(model, scale, origin);
 }
 
 /**
@@ -28,13 +84,33 @@ export function scaleModel(model: Model, scale: number, center?: Vector3 | Enum.
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: the Part's Position
  */
-export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum.NormalId): void {
+export function scalePart(part: BasePart, scale: ScaleInputType, center?: Vector3 | Enum.NormalId): void {
 	if (scale === 1) {
 		return;
 	}
 	const origin = _centerToOrigin(center, part.Size, part.Position);
 	_scaleBasePart(part, scale, origin);
-	scaleInstances(part.GetChildren(), scale, origin);
+	scaleDescendants(part, scale, origin);
+}
+
+function lerpVector(vector: Vector3, center: Vector3, sspec: ScaleSpecifier): Vector3 {
+	const delta = vector.sub(center);
+
+	// const {X, Y, Z} = vector;
+	const centerX = center.X;
+	const centerY = center.Y;
+	const centerZ = center.Z;
+
+	const scaleVec = sspec.asVector3;
+	const scaleX = scaleVec.X;
+	const scaleY = scaleVec.Y;
+	const scaleZ = scaleVec.Z;
+
+	return new Vector3(
+		centerX + (delta.X * scaleX),
+		centerY + (delta.Y * scaleY),
+		centerZ + (delta.Z * scaleZ)
+	);
 }
 
 /**
@@ -43,14 +119,17 @@ export function scalePart(part: BasePart, scale: number, center?: Vector3 | Enum
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: position not considered
  */
-export function scaleVector(vector: Vector3, scale: number, center?: Vector3): Vector3 {
+export function scaleVector(vector: Vector3, scale: ScaleInputType, center?: Vector3): Vector3 {
 	if (scale === 1) {
 		return vector;
 	}
+	const sspec = new ScaleSpecifier(scale);
 	if (center) {
-		return center.Lerp(vector, scale);
+		return lerpVector(vector, center, sspec);
 	} else {
-		return vector.mul(scale);
+		return sspec.isVector3 ? 
+			vector.mul(sspec.asVector3) :
+			vector.mul(sspec.asNumber);
 	}
 }
 
@@ -59,13 +138,14 @@ export function scaleVector(vector: Vector3, scale: number, center?: Vector3): V
  * @param explosion The Explosion to scale
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  */
-export function scaleExplosion(explosion: Explosion, scale: number): void {
+export function scaleExplosion(explosion: Explosion, scale: ScaleInputType): void {
 	if (scale === 1) {
 		return;
 	}
-	explosion.Position = explosion.Position.mul(scale);
-	explosion.BlastPressure *= scale;
-	explosion.BlastRadius *= scale;
+	const sspec = new ScaleSpecifier(scale);
+	explosion.Position = sspec.isVector3 ? explosion.Position.mul(sspec.asVector3) : explosion.Position.mul(sspec.asNumber);
+	explosion.BlastPressure *= sspec.asNumber;
+	explosion.BlastRadius *= sspec.asNumber;
 }
 
 /**
@@ -74,7 +154,7 @@ export function scaleExplosion(explosion: Explosion, scale: number): void {
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  * @param center (Optional) The point about which to scale.  Default: the Tool's Handle's Position
  */
-export function scaleTool(tool: Tool, scale: number, center?: Vector3 | Enum.NormalId): void {
+export function scaleTool(tool: Tool, scale: ScaleInputType, center?: Vector3 | Enum.NormalId): void {
 	if (scale === 1) {
 		return;
 	}	
@@ -89,7 +169,25 @@ export function scaleTool(tool: Tool, scale: number, center?: Vector3 | Enum.Nor
 		}
 		origin = _centerToOrigin(center, handle.Size, handle.Position);
 	}
-	scaleInstances(tool.GetChildren(), scale, origin);
+	scaleDescendants(tool, scale, origin);
+}
+
+function disableWelds(container: Instance): Map<WeldConstraint, boolean> {
+	const welds = new Map<WeldConstraint, boolean>();
+	const desc = container.GetDescendants();
+	for (const instance of desc) {
+		if (instance.IsA("WeldConstraint")) {
+			welds.set(instance, instance.Enabled);
+			instance.Enabled = false;
+		}
+	}
+	return welds;
+}
+
+function enableWelds(welds: Map<WeldConstraint, boolean>) {
+	welds.forEach((value: boolean, wc: WeldConstraint) => {
+		wc.Enabled = value;
+	});
 }
 
 /**
@@ -97,17 +195,12 @@ export function scaleTool(tool: Tool, scale: number, center?: Vector3 | Enum.Nor
  * @param explosion The Instances to scale
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  */
-export function scaleInstances(instances: Instance[], scale: number, origin: Vector3): void {
+export function scaleDescendants(container: Instance, scale: ScaleInputType, origin: Vector3, recur: boolean = false): void {
 	if (scale === 1) {
 		return;
 	}
-	const welds = new Map<WeldConstraint, [boolean, boolean, boolean]>();
-	for (const instance of instances) {
-		if (instance.IsA("WeldConstraint")) {
-			welds.set(instance, [instance.Enabled, instance.Part0?.Anchored || false, instance.Part1?.Anchored || false]);
-			instance.Enabled = false;
-		}
-	}
+	const welds = recur ? undefined : disableWelds(container);
+	const instances = container.GetChildren();
 	for (const instance of instances) {
 		let scaledChildren = false;
 		if (instance.IsA("BasePart")) {
@@ -132,25 +225,20 @@ export function scaleInstances(instances: Instance[], scale: number, origin: Vec
 			scaleTexture(instance, scale, origin);
 		}
 		if (!scaledChildren) {
-			scaleInstances(instance.GetChildren(), scale, origin);
+			scaleDescendants(instance, scale, origin, true);
 		}
 	}
-	welds.forEach((value: [boolean, boolean, boolean], wc: WeldConstraint) => {
-		wc.Enabled = value[0];
-		if (wc.Part0) {
-			wc.Part0.Anchored = value[1];
-		}
-		if (wc.Part1) {
-			wc.Part1.Anchored = value[2];
-		}
-	});
+	if (welds) {
+		enableWelds(welds);
+	}
 }
 
-export function scaleTexture(texture: Texture, scale: number, origin: Vector3) {
-	texture.OffsetStudsU *= scale;	
-	texture.OffsetStudsV *= scale;
-	texture.StudsPerTileU *= scale;
-	texture.StudsPerTileV *= scale;
+export function scaleTexture(texture: Texture, scale: ScaleInputType, origin: Vector3) {
+	const sspecV2 = new ScaleSpecifier(scale).asVector2;
+	texture.OffsetStudsU *= sspecV2.X;	
+	texture.OffsetStudsV *= sspecV2.Y;
+	texture.StudsPerTileU *= sspecV2.X;
+	texture.StudsPerTileV *= sspecV2.Y;
 }
 
 function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, position: Vector3): Vector3 {
@@ -192,34 +280,38 @@ function _minSide(size: Vector3, position: Vector3, side?: Enum.NormalId): Vecto
 	return position;
 }
 
-function _scaleBasePart(part: BasePart, scale: number, origin: Vector3) {
+function _scaleBasePart(part: BasePart, scale: ScaleInputType, origin: Vector3) {
 	const angle = part.CFrame.sub(part.Position);
-	const pos = origin.Lerp(part.Position, scale);
-	part.Size = part.Size.mul(scale);
+
+	const sspec = new ScaleSpecifier(scale);
+	const pos = lerpVector(part.Position, origin, sspec);
+	part.Size = sspec.isVector3 ? part.Size.mul(sspec.asVector3) :
+		part.Size.mul(sspec.asNumber);
 	part.CFrame = new CFrame(pos).mul(angle);
 }
 
-function _scaleAttachment(attachment: Attachment, scale: number, _origin: Vector3) {
-	const parent = attachment.Parent;
-	if (parent && parent.IsA("BasePart")) {
-		attachment.WorldPosition = parent.Position.Lerp(attachment.WorldPosition, scale);
+function _scaleAttachment(attachment: Attachment, scale: ScaleInputType, _origin: Vector3) {
+	const parent = attachment.FindFirstAncestorWhichIsA('BasePart');
+	if (parent) {
+		attachment.WorldPosition = lerpVector(attachment.WorldPosition, parent.Position, new ScaleSpecifier(scale));
 	}
 }
 
-function _scaleMesh(mesh: SpecialMesh, scale: number, _origin: Vector3): void {
-	mesh.Scale = mesh.Scale.mul(scale);
+function _scaleMesh(mesh: SpecialMesh, scale: ScaleInputType, _origin: Vector3): void {
+	mesh.Scale = mesh.Scale.mul(new ScaleSpecifier(scale).asNumber);
 }
 
-function _scaleFire(fire: Fire, scale: number, _origin: Vector3): void {
-	fire.Size = math.floor(fire.Size * scale);
+function _scaleFire(fire: Fire, scale: ScaleInputType, _origin: Vector3): void {
+	fire.Size = math.floor(fire.Size * new ScaleSpecifier(scale).asNumber);
 }
 
-function _scaleParticle(particle: ParticleEmitter, scale: number): void {
+function _scaleParticle(particle: ParticleEmitter, scale: ScaleInputType): void {
 	particle.Size = _scaleNumberSequence(particle.Size, scale);
 }
 
-function _scaleNumberSequence(sequence: NumberSequence, scale: number): NumberSequence {
+function _scaleNumberSequence(sequence: NumberSequence, scale: ScaleInputType): NumberSequence {
+	const scaleNum = new ScaleSpecifier(scale).asNumber;
 	return new NumberSequence(
-		sequence.Keypoints.map((kp) => new NumberSequenceKeypoint(kp.Time, kp.Value * scale, kp.Envelope * scale)),
+		sequence.Keypoints.map((kp) => new NumberSequenceKeypoint(kp.Time, kp.Value * scaleNum, kp.Envelope * scaleNum)),
 	);
 }
