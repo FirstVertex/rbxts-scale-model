@@ -1,3 +1,13 @@
+/**
+ * @rbxts/scale-model
+ * 
+ * USAGE:
+ * import { scaleModel } '@rbxts/scale-model';
+ * 
+ * scaleModel(game.Workspace.MyModel, 7, Enum.NormalId.Bottom)
+ * 
+ */
+
 function averageNumbers(numbers: number[]) {
 	const count = numbers.size();
 	if (count === 0) {
@@ -6,8 +16,14 @@ function averageNumbers(numbers: number[]) {
 	return numbers.reduce((acc: number, cv: number) => (acc + cv), 0) / count;
 }
 
+/**
+ * A type used to represent the parameters for scaling
+ */
 export type ScaleInputType = number | Vector2 | Vector3 | ScaleSpecifier
 
+/**
+ * A class used to represent the parameters for scaling
+ */
 export class ScaleSpecifier {
 	constructor(private readonly _scaleInput: ScaleInputType) {
 		const inputType = typeOf(_scaleInput);

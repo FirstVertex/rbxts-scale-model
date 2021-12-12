@@ -1,6 +1,6 @@
 # @rbxts/scale-model
 
-## Uniformly scale/resize Models and Parts and all Descendants
+## Scale/resize Models and Parts and all Descendants
 
 ## Version 2.0 adds non-uniform scaling by number, Vector2, or Vector3
 
@@ -54,6 +54,13 @@ __The scaling of a Tool can fail__ if attempted on a Tool that doesn't have a Ha
 ### Did I miss your favorite Descendant?
 
 [Pull Requests](https://github.com/FirstVertex/rbxts-scale-model/pulls) are welcome if there's something I missed.  Or, [open an Issue](https://github.com/FirstVertex/rbxts-scale-model/issues).
+
+## Command-line usage
+The compiled modulescript is available in the [Roblox Library with asset id 8238368335](https://www.roblox.com/library/8238368335/rbxts-scale-model)
+Open the Command Bar in Roblox studio and require the modulescript to use it
+```
+require(8238368335).scaleModel(game.Workspace.TestModel, 4, Enum.NormalId.Bottom)
+```
 
 ### Roblox-TS
 
