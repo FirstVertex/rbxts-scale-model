@@ -230,13 +230,13 @@ export function scaleDescendants(container: Instance, scale: ScaleInputType, ori
 			scaleTool(instance, scale, origin);
 			scaledChildren = true;
 		} else if (instance.IsA("SpecialMesh")) {
-			_scaleMesh(instance, scale, origin);
+			scaleMesh(instance, scale, origin);
 		} else if (instance.IsA("Fire")) {
-			_scaleFire(instance, scale, origin);
+			scaleFire(instance, scale, origin);
 		} else if (instance.IsA("Explosion")) {
 			scaleExplosion(instance, scale);
 		} else if (instance.IsA("ParticleEmitter")) {
-			_scaleParticle(instance, scale);
+			scaleParticle(instance, scale);
 		} else if (instance.IsA("Texture")) {
 			scaleTexture(instance, scale, origin);
 		}
@@ -255,6 +255,25 @@ export function scaleTexture(texture: Texture, scale: ScaleInputType, origin: Ve
 	texture.OffsetStudsV *= sspecV2.Y;
 	texture.StudsPerTileU *= sspecV2.X;
 	texture.StudsPerTileV *= sspecV2.Y;
+}
+
+export function scaleMesh(mesh: SpecialMesh, scale: ScaleInputType, _origin: Vector3): void {
+	mesh.Scale = mesh.Scale.mul(new ScaleSpecifier(scale).asNumber);
+}
+
+export function scaleFire(fire: Fire, scale: ScaleInputType, _origin: Vector3): void {
+	fire.Size = math.floor(fire.Size * new ScaleSpecifier(scale).asNumber);
+}
+
+export function scaleParticle(particle: ParticleEmitter, scale: ScaleInputType): void {
+	particle.Size = scaleNumberSequence(particle.Size, scale);
+}
+
+export function scaleNumberSequence(sequence: NumberSequence, scale: ScaleInputType): NumberSequence {
+	const scaleNum = new ScaleSpecifier(scale).asNumber;
+	return new NumberSequence(
+		sequence.Keypoints.map((kp) => new NumberSequenceKeypoint(kp.Time, kp.Value * scaleNum, kp.Envelope * scaleNum)),
+	);
 }
 
 function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, position: Vector3): Vector3 {
@@ -311,23 +330,4 @@ function _scaleAttachment(attachment: Attachment, scale: ScaleInputType, _origin
 	if (parent) {
 		attachment.WorldPosition = lerpVector(attachment.WorldPosition, parent.Position, new ScaleSpecifier(scale));
 	}
-}
-
-function _scaleMesh(mesh: SpecialMesh, scale: ScaleInputType, _origin: Vector3): void {
-	mesh.Scale = mesh.Scale.mul(new ScaleSpecifier(scale).asNumber);
-}
-
-function _scaleFire(fire: Fire, scale: ScaleInputType, _origin: Vector3): void {
-	fire.Size = math.floor(fire.Size * new ScaleSpecifier(scale).asNumber);
-}
-
-function _scaleParticle(particle: ParticleEmitter, scale: ScaleInputType): void {
-	particle.Size = _scaleNumberSequence(particle.Size, scale);
-}
-
-function _scaleNumberSequence(sequence: NumberSequence, scale: ScaleInputType): NumberSequence {
-	const scaleNum = new ScaleSpecifier(scale).asNumber;
-	return new NumberSequence(
-		sequence.Keypoints.map((kp) => new NumberSequenceKeypoint(kp.Time, kp.Value * scaleNum, kp.Envelope * scaleNum)),
-	);
 }
