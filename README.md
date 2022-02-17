@@ -14,6 +14,7 @@
 * Texture (U/V)
 * ParticleEmitter (Size: _NumberSequence_)
 * Explosion (Position, BlastPressure, BlastRadius)
+* PointLight (Range)
 * Vector3 (Scale, Scale about Point)
 * Tool (All Descendants, using Handle as reference)
 * Instances (generic catch-all for e.g. a Folder)

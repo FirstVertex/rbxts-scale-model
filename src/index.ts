@@ -220,7 +220,8 @@ export function scaleDescendants(container: Instance, scale: ScaleInputType, ori
 	for (const instance of instances) {
 		let scaledChildren = false;
 		if (instance.IsA("BasePart")) {
-			_scaleBasePart(instance, scale, origin);
+			scalePart(instance, scale, origin);
+            scaledChildren = true;
 		} else if (instance.IsA("Model")) {
 			scaleModel(instance, scale, origin);
 			scaledChildren = true;
@@ -274,6 +275,11 @@ export function scaleNumberSequence(sequence: NumberSequence, scale: ScaleInputT
 	return new NumberSequence(
 		sequence.Keypoints.map((kp) => new NumberSequenceKeypoint(kp.Time, kp.Value * scaleNum, kp.Envelope * scaleNum)),
 	);
+}
+
+export function scalePointLight(light: PointLight, scale: ScaleInputType): void {
+	const scaleNum = new ScaleSpecifier(scale).asNumber;
+    light.Range *= scaleNum;
 }
 
 function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, position: Vector3): Vector3 {
