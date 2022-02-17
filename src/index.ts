@@ -240,6 +240,8 @@ export function scaleDescendants(container: Instance, scale: ScaleInputType, ori
 			scaleParticle(instance, scale);
 		} else if (instance.IsA("Texture")) {
 			scaleTexture(instance, scale, origin);
+		} else if (instance.IsA("PointLight")) {
+			scalePointLight(instance, scale);
 		}
 		if (!scaledChildren) {
 			scaleDescendants(instance, scale, origin, true);
