@@ -5,6 +5,7 @@
  * import { scaleModel } '@rbxts/scale-model';
  * 
  * scaleModel(game.Workspace.MyModel, 7, Enum.NormalId.Bottom)
+ * scalePart(game.Workspace.MyPart, 0.5)
  * 
  */
 
