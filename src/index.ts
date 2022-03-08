@@ -206,6 +206,25 @@ function enableWelds(welds: Map<WeldConstraint, boolean>) {
 	});
 }
 
+// function snapshotChildRelationships(container: Instance, origin: CFrame): Map<BasePart, CFrame> {
+// 	const childRels = new Map<BasePart, CFrame>();
+// 	const desc = container.GetDescendants();
+// 	for (const instance of desc) {
+// 		if (instance.IsA("BasePart")) {
+// 			childRels.set(instance, origin.ToObjectSpace(instance.CFrame));
+// 		}
+// 	}
+// 	return childRels;
+// }
+
+// function restoreChildRelationships(childRels: Map<BasePart, CFrame>, origin: CFrame, scale: ScaleInputType) {
+// 	childRels.forEach((cf: CFrame, bp: BasePart) => {
+//         const orientation = cf.sub(cf.Position);
+//         const pos = origin.ToWorldSpace(new CFrame(scaleVector(cf.Position, scale)));
+// 		bp.CFrame = pos.mul(orientation);
+// 	});
+// }
+
 /**
  * Scale an array of Instances uniformly
  * @param explosion The Instances to scale
@@ -215,7 +234,10 @@ export function scaleDescendants(container: Instance, scale: ScaleInputType, ori
 	if (scale === 1) {
 		return;
 	}
+    const cfOrigin = new CFrame(origin);
+	// const rels = recur ? undefined : snapshotChildRelationships(container, cfOrigin);
 	const welds = recur ? undefined : disableWelds(container);
+
 	const instances = container.GetChildren();
 	for (const instance of instances) {
 		let scaledChildren = false;
@@ -242,11 +264,16 @@ export function scaleDescendants(container: Instance, scale: ScaleInputType, ori
 			scaleTexture(instance, scale, origin);
 		} else if (instance.IsA("PointLight")) {
 			scalePointLight(instance, scale);
+		} else if (instance.IsA('JointInstance')) {
+            scaleJoint(instance, scale);
 		}
 		if (!scaledChildren) {
 			scaleDescendants(instance, scale, origin, true);
 		}
 	}
+	// if (rels) {
+	// 	restoreChildRelationships(rels, cfOrigin, scale);
+	// }
 	if (welds) {
 		enableWelds(welds);
 	}
@@ -282,6 +309,17 @@ export function scaleNumberSequence(sequence: NumberSequence, scale: ScaleInputT
 export function scalePointLight(light: PointLight, scale: ScaleInputType): void {
 	const scaleNum = new ScaleSpecifier(scale).asNumber;
     light.Range *= scaleNum;
+}
+
+export function scaleJoint(joint: JointInstance, scale: ScaleInputType): void {
+    const c0NewPos = scaleVector(joint.C0.Position, scale);
+    const c0Rot = joint.C0.sub(joint.C0.Position);
+
+    const c1NewPos = scaleVector(joint.C1.Position, scale);
+    const c1Rot = joint.C1.sub(joint.C1.Position);
+    
+    joint.C0 = new CFrame(c0NewPos).mul(c0Rot);
+    joint.C1 = new CFrame(c1NewPos).mul(c1Rot);
 }
 
 function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, position: Vector3): Vector3 {

@@ -17,6 +17,7 @@
 * PointLight (Range)
 * Vector3 (Scale, Scale about Point)
 * Tool (All Descendants, using Handle as reference)
+* Joint (Thanks to [@RRainmaker](https://github.com/RRainmaker))
 * Instances (generic catch-all for e.g. a Folder)
 
 ## Usage
