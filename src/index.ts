@@ -75,7 +75,7 @@ export class ScaleSpecifier {
  * Scale a Model and all descendants uniformly
  * @param model The Model to scale
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
- * @param center (Optional) The point about which to scale.  Default: the Model's PrimaryPart's Position
+ * @param center (Optional) The point about which to scale.  Default: the Model's PivotPoint's Position
  */
 export function scaleModel(model: Model, scale: ScaleInputType, center?: Vector3 | Enum.NormalId): void {
 	if (scale === 1) {
@@ -85,12 +85,7 @@ export function scaleModel(model: Model, scale: ScaleInputType, center?: Vector3
 	if (center && typeIs(center, 'Vector3')) {
 		origin = center;
 	} else {
-		const pPart = model.PrimaryPart;
-		if (!pPart) {
-			print("Unable to scale model, no center nor PrimaryPart has been defined");
-			return;
-		}
-		origin = _centerToOrigin(center, model.GetExtentsSize(), pPart.Position);
+		origin = _centerToOrigin(center, model.GetExtentsSize(), model.GetPivot());
 	}
 	scaleDescendants(model, scale, origin);
 }
@@ -105,7 +100,7 @@ export function scalePart(part: BasePart, scale: ScaleInputType, center?: Vector
 	if (scale === 1) {
 		return;
 	}
-	const origin = _centerToOrigin(center, part.Size, part.Position);
+	const origin = _centerToOrigin(center, part.Size, part.GetPivot());
 	_scaleBasePart(part, scale, origin);
 	scaleDescendants(part, scale, origin);
 }
@@ -184,9 +179,43 @@ export function scaleTool(tool: Tool, scale: ScaleInputType, center?: Vector3 | 
 			print("Unable to scale tool, no center nor Handle has been defined");
 			return;
 		}
-		origin = _centerToOrigin(center, handle.Size, handle.Position);
+		origin = _centerToOrigin(center, handle.Size, handle.GetPivot());
 	}
 	scaleDescendants(tool, scale, origin);
+}
+
+/**
+ * Scale a Humanoid uniformly
+ * @param humanoid The Humanoid to scale
+ * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
+ */
+export function scaleHumanoid(humanoid: Humanoid, scale: ScaleInputType, center?: Vector3 | Enum.NormalId): void {
+    if (humanoid.RigType === Enum.HumanoidRigType.R15) {
+        const sNumber = new ScaleSpecifier(scale).asNumber;
+        const scales = {
+            head: humanoid.FindFirstChild('HeadScale') as NumberValue,
+            bodyDepth: humanoid.FindFirstChild('BodyDepthScale') as NumberValue,
+            bodyWidth: humanoid.FindFirstChild('BodyWidthScale') as NumberValue,
+            bodyHeight: humanoid.FindFirstChild('BodyHeightScale') as NumberValue
+        };
+        if (scales.head) {
+            scales.head.Value *= sNumber;
+        }
+        if (scales.bodyDepth) {
+            scales.bodyDepth.Value *= sNumber;
+        }
+        if (scales.bodyWidth) {
+            scales.bodyWidth.Value *= sNumber;
+        }
+        if (scales.bodyHeight) {
+            scales.bodyHeight.Value *= sNumber;
+        }
+    } else {
+        const char = humanoid.Parent as Model;
+        if (char) {
+            return scaleModel(char, scale, center);
+        }
+    }
 }
 
 function disableWelds(container: Instance): Map<WeldConstraint, boolean> {
@@ -228,53 +257,61 @@ function enableWelds(welds: Map<WeldConstraint, boolean>) {
 
 /**
  * Scale an array of Instances uniformly
- * @param explosion The Instances to scale
+ * @param instance The Instance to scale
+ * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
+ */
+export function scaleInstance(instance: Instance, scale: ScaleInputType, origin: Vector3): void {
+	if (scale === 1) {
+		return;
+	}
+
+    let scaledChildren = false;
+    if (instance.IsA("BasePart")) {
+        scalePart(instance, scale, origin);
+        scaledChildren = true;
+    } else if (instance.IsA("Model")) {
+        scaleModel(instance, scale, origin);
+        scaledChildren = true;
+    } else if (instance.IsA("Attachment")) {
+        _scaleAttachment(instance, scale, origin);
+    } else if (instance.IsA("Tool")) {
+        scaleTool(instance, scale, origin);
+        scaledChildren = true;
+    } else if (instance.IsA("SpecialMesh")) {
+        scaleMesh(instance, scale, origin);
+    } else if (instance.IsA("Fire")) {
+        scaleFire(instance, scale, origin);
+    } else if (instance.IsA("Explosion")) {
+        scaleExplosion(instance, scale);
+    } else if (instance.IsA("ParticleEmitter")) {
+        scaleParticle(instance, scale);
+    } else if (instance.IsA("Texture")) {
+        scaleTexture(instance, scale, origin);
+    } else if (instance.IsA("PointLight")) {
+        scalePointLight(instance, scale);
+    } else if (instance.IsA('JointInstance')) {
+        scaleJoint(instance, scale);
+    }
+    if (!scaledChildren) {
+        scaleDescendants(instance, scale, origin, true);
+    }
+}
+
+/**
+ * Scale an array of Instances uniformly
+ * @param container The parent of the Instances to scale
  * @param scale The amount to scale.  > 1 is bigger, < 1 is smaller
  */
 export function scaleDescendants(container: Instance, scale: ScaleInputType, origin: Vector3, recur: boolean = false): void {
 	if (scale === 1) {
 		return;
 	}
-    const cfOrigin = new CFrame(origin);
-	// const rels = recur ? undefined : snapshotChildRelationships(container, cfOrigin);
 	const welds = recur ? undefined : disableWelds(container);
-
 	const instances = container.GetChildren();
+
 	for (const instance of instances) {
-		let scaledChildren = false;
-		if (instance.IsA("BasePart")) {
-			scalePart(instance, scale, origin);
-            scaledChildren = true;
-		} else if (instance.IsA("Model")) {
-			scaleModel(instance, scale, origin);
-			scaledChildren = true;
-		} else if (instance.IsA("Attachment")) {
-			_scaleAttachment(instance, scale, origin);
-		} else if (instance.IsA("Tool")) {
-			scaleTool(instance, scale, origin);
-			scaledChildren = true;
-		} else if (instance.IsA("SpecialMesh")) {
-			scaleMesh(instance, scale, origin);
-		} else if (instance.IsA("Fire")) {
-			scaleFire(instance, scale, origin);
-		} else if (instance.IsA("Explosion")) {
-			scaleExplosion(instance, scale);
-		} else if (instance.IsA("ParticleEmitter")) {
-			scaleParticle(instance, scale);
-		} else if (instance.IsA("Texture")) {
-			scaleTexture(instance, scale, origin);
-		} else if (instance.IsA("PointLight")) {
-			scalePointLight(instance, scale);
-		} else if (instance.IsA('JointInstance')) {
-            scaleJoint(instance, scale);
-		}
-		if (!scaledChildren) {
-			scaleDescendants(instance, scale, origin, true);
-		}
+        scaleInstance(instance, scale, origin);
 	}
-	// if (rels) {
-	// 	restoreChildRelationships(rels, cfOrigin, scale);
-	// }
 	if (welds) {
 		enableWelds(welds);
 	}
@@ -323,15 +360,15 @@ export function scaleJoint(joint: JointInstance, scale: ScaleInputType): void {
     joint.C1 = new CFrame(c1NewPos).mul(c1Rot);
 }
 
-function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, position: Vector3): Vector3 {
+function _centerToOrigin(center: Vector3 | Enum.NormalId | undefined, size: Vector3, pivot: CFrame): Vector3 {
 	let origin: Vector3;
 	if (typeIs(center, "Vector3")) {
 		origin = center;
 	} else {
 		if (center) {
-			origin = _minSide(size, position, center);
+			origin = _minSide(size, pivot.Position, center);
 		} else {
-			origin = position;
+			origin = pivot.Position;
 		}
 	}
 	return origin;
